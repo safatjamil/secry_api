@@ -1,0 +1,13 @@
+manage.py
+db.sqlite3
+secry_api/settings.py
+secry_api/__init__.py
+secry_api/asgi.py
+secry_api/wsgi.py
+secry_api/__pycache__/
+secry_api/migrations/
+api/admin.py
+api/__init__.py
+api/tests.py
+api/migrations/
+api/__pycache__/
