@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
@@ -8,8 +9,7 @@ from .serializers import *
 class UserRegistrationView(APIView):
     def post(self, request):
         try:
-            data = request.data
-            serializer = UserSerializer(data = data)
+            serializer = UserSerializer(data = request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({
@@ -17,10 +17,16 @@ class UserRegistrationView(APIView):
                     "message": "Account has been created",
                     "data": serializer.data,
                 })
+            else:
+                return Response({
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Bad format",
+                    "data": serializer.errors
+                })
 
         except:
             return Response({
-                    "status": 403,
-                    "message": "Bad format",
-                    "data": serializer.data,
+                    "status": status.HTTP_400_BAD_REQUEST,
+                    "message": "Can not parse data",
+                    "data" : {}
                 })

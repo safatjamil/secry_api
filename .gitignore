@@ -1,4 +1,3 @@
-.gitignore
 manage.py
 db.sqlite3
 secry_api/settings.py
