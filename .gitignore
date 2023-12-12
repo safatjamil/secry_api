@@ -11,3 +11,4 @@ api/__init__.py
 api/tests.py
 api/migrations/
 api/__pycache__/
+modules/__pycache__/
