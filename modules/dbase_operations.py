@@ -12,3 +12,4 @@ class Update:
 
     def user(self, id, data):
         User.objects.filter(id = id).update(data)
+    
