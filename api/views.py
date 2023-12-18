@@ -17,82 +17,65 @@ create = Create()
 update = Update()
 
 
-@api_view(["POST", "PUT", "DELETE"])
+@api_view(["POST"])
 def user_registration(request):
-    x = request.headers
-    print(x)
-    if request.method == "POST":
-        try:
-            data  = request.data
-            serializer = UserSerializer(data = request.data)
-            if serializer.is_valid():
- 
-                # check duplicate account
-                if query.check_duplicate_user(data["email"])>0:
-                    return Response({
-                        "status": status.HTTP_200_OK,
-                        "message": "Account with this email already exists",
-                        "data": serializer.data,
-                        })
-                
-                # encrypt password
-                data["password"] = encrypt.hash_password(data["password"])
-                if "last_name" not in data:
-                    data["last_name"] = ""
-                
-                # create user
+    try:
+        serializer = UserSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "status": 200,
+                "message": "Account has been created",
+                "data": serializer.data,
+            })
+        else:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Unsuccessful operation",
+                "data": serializer.errors
+            })
+
+    except:
+        return Response({
+            "status": status.HTTP_400_BAD_REQUEST,
+            "message": "Please provide valid data",
+            "data" : {}
+        })
+
+
+
+@api_view(["PUT"])
+@permission_classes([AllowAny, ])
+def user_modification(request):
+    try:
+        data  = request.data
+        serializer = UserSerializer(data = request.data)
+        if serializer.is_valid():
+            # check duplicate account
+            if query.check_duplicate_user(data["new_email"])>0:
+                return Response({
+                    "status": status.HTTP_200_OK,
+                    "message": "Account with this email already exists",
+                    "data": serializer.data,
+                    })
+        
+            # update user
                 create.user(data)
                 return Response({
                     "status": 200,
                     "message": "Account has been created",
                     "data": serializer.data,
-                   })
+                })
             else:
                 return Response({
                     "status": status.HTTP_400_BAD_REQUEST,
                     "message": "Bad format",
                     "data": serializer.errors
-                   })
+                })
 
-        except:
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Something went wrong",
-                "data" : {}
-               })
-
-
-    if request.method == "PUT":
-        try:
-            data  = request.data
-            serializer = UserSerializer(data = request.data)
-            if serializer.is_valid():
-                
-                # check duplicate account
-                if query.check_duplicate_user(data["new_email"])>0:
-                    return Response({
-                        "status": status.HTTP_200_OK,
-                        "message": "Account with this email already exists",
-                        "data": serializer.data,
-                        })
-            
-                # update user
-                    create.user(data)
-                    return Response({
-                        "status": 200,
-                        "message": "Account has been created",
-                        "data": serializer.data,
-                    })
-                else:
-                    return Response({
-                        "status": status.HTTP_400_BAD_REQUEST,
-                        "message": "Bad format",
-                        "data": serializer.errors
-                    })
-
-        except:
-            return Response({
-                "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Something went wrong",
-                "data" : {}
-               })
+    except:
+        return Response({
+            "status": status.HTTP_400_BAD_REQUEST,
+            "message": "Something went wrong",
+            "data" : {}
+            })
