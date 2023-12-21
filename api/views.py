@@ -1,14 +1,16 @@
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
-from .models import User
+from .models import *
 from modules.auth import *
 from modules.encrypt import *
 from modules.query import *
+from modules.jwt import *
 from modules.dbase_operations import *
 
 auth = Auth()
@@ -21,15 +23,22 @@ update = Update()
 @api_view(["POST"])
 def user_registration(request):
     try:
+        data = request.data
+        print("1")
         serializer = UserSerializer(data = request.data)
+        print("2")
+        print(serializer.data)
         if serializer.is_valid():
-            serializer.save()
+            print("3")
+            User = get_user_model()
+            user = User.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
             return Response({
                 "status": 200,
                 "message": "Account has been created",
                 "data": serializer.data,
             })
         else:
+            print("4")
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Unsuccessful operation",
@@ -52,11 +61,11 @@ def user_login(request):
         if serializer.is_valid():
             user = auth.user(email = data["email"], password = data["password"])
             if user is not None:
-
+                tokens = create_tokens_for_user(user)
                 return Response({
                     "status": status.HTTP_200_OK,
                     "message": "authorized",
-                    "data": ""
+                    "data": { "tokens" : tokens }
                    })
 
             else:

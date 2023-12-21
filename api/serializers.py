@@ -7,13 +7,9 @@ encrypt = Encrypt()
 
 class UserSerializer(serializers.ModelSerializer):
 
-    def validate_password(self, password: str) -> str:
-        return encrypt.hash_password(password)
-
     class Meta(object):
-        model = User
-        fields = ['email', 'first_name', 'last_name', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        model = CustomUser
+        fields = ["email", "first_name", "last_name", "password"]
 
 
 class UserAuthSerializer(serializers.Serializer):
