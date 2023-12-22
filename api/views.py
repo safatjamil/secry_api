@@ -10,37 +10,32 @@ from .models import *
 from modules.auth import *
 from modules.encrypt import *
 from modules.query import *
+from modules.validations import *
 from modules.jwt import *
 from modules.dbase_operations import *
 
 auth = Auth()
 encrypt = Encrypt()
+validate = Validations()
 query = Query()
 create = Create()
 update = Update()
 
+User = get_user_model()
 
 @api_view(["POST"])
 def user_registration(request):
     try:
         data = request.data
-        print("1")
         serializer = UserSerializer(data = request.data)
-        print("2")
         if serializer.is_valid():
-
-            print("3")
-            print(serializer.data)
-            user = CustomUser.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
-        
-            print("5")
+            user = User.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
             return Response({
                 "status": 200,
                 "message": "Account has been created",
                 "data": serializer.data,
             })
         else:
-            print("4")
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Please provide valid data",
@@ -55,44 +50,49 @@ def user_registration(request):
         })
 
 
-@api_view(["POST"])
-def user_login(request):
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated,])
+def user_edit_email(request):
     try:
-        data = request.data
-        serializer = UserAuthSerializer(data = request.data)
-        if serializer.is_valid():
-            user = auth.user(email = data["email"], password = data["password"])
-            if user is not None:
-                tokens = create_tokens_for_user(user)
+        data  = request.data
+        email = request.user.email
+        print(email)
+        print("1")
+        print(validate.email(data["new_email"]))
+        if "new_email" in data and validate.email(data["new_email"]):
+            print("2")
+            if query.duplicate_user(data["new_email"])>0:
                 return Response({
-                    "status": status.HTTP_200_OK,
-                    "message": "authorized",
-                    "data": { "tokens" : tokens }
-                   })
-
-            else:
-                return Response({
-                    "status": status.HTTP_401_UNAUTHORIZED,
-                    "message": "Unauthorized",
-                    "data": serializer.errors
-                   })
+                    "status": status.HTTP_406_NOT_ACCEPTABLE,
+                    "message": "Account with this email already exists",
+                    "data": {},
+                    })
+            # update user
+            user = User.objects.get(email = data["old_email"])
+            user.email = data["new_email"]
+            user.save()
+            return Response({
+                "status": 200,
+                "message": "Your email has been updated",
+                "data": {},
+            })
         else:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
                 "message": "Please provide valid data",
-                "data" : {}
-               })
+                "data": {}
+            })
 
     except:
         return Response({
             "status": status.HTTP_400_BAD_REQUEST,
             "message": "Something went wrong",
             "data" : {}
-        })
+            })
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated,])
-def user_edit(request):
+def user_edit_info(request):
     try:
         data  = request.data
         serializer = UserSerializer(data = request.data)
@@ -125,45 +125,3 @@ def user_edit(request):
             "message": "Something went wrong",
             "data" : {}
             })
-
-@api_view(["POST"])
-def authenticate_user(request):
-    try:
-        user = User.objects.get(email = request.data["email"], password = request.data["email"])
-        if user:
-            try:
-                payload = jwt_payload_handler(user)
-
-                token = jwt.encode(payload, settings.SECRET_KEY)
-
-                user_details = {}
-
-                user_details['name'] = "%s %s" % (
-
-                    user.first_name, user.last_name)
-
-                user_details['token'] = token
-
-                user_logged_in.send(sender=user.__class__,
-
-                                    request=request, user=user)
-
-                return Response(user_details, status=status.HTTP_200_OK)
-
-            except Exception as e:
-
-                raise e
-
-        else:
-
-            res = {
-
-                'error': 'can not authenticate with the given credentials or the account has been deactivated'}
-
-            return Response(res, status=status.HTTP_403_FORBIDDEN)
-
-    except KeyError:
-
-        res = {'error': 'please provide a email and a password'}
-
-        return Response(res)
