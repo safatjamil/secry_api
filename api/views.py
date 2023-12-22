@@ -27,11 +27,13 @@ def user_registration(request):
         print("1")
         serializer = UserSerializer(data = request.data)
         print("2")
-        print(serializer.data)
         if serializer.is_valid():
+
             print("3")
-            User = get_user_model()
-            user = User.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
+            print(serializer.data)
+            user = CustomUser.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
+        
+            print("5")
             return Response({
                 "status": 200,
                 "message": "Account has been created",
@@ -41,14 +43,14 @@ def user_registration(request):
             print("4")
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
-                "message": "Unsuccessful operation",
+                "message": "Please provide valid data",
                 "data": serializer.errors
             })
 
     except:
         return Response({
             "status": status.HTTP_400_BAD_REQUEST,
-            "message": "Please provide valid data",
+            "message": "Something went wrong",
             "data" : {}
         })
 
