@@ -1,6 +1,8 @@
 import bcrypt
 import cryptography
+import requests
 from .query import *
+
 
 query = Query()
 
@@ -10,14 +12,12 @@ class Auth:
         return bcrypt.checkpw(password.encode("utf-8"), hashed_password) 
     
     def user(self, email, password):
-        user = query.user(email = email)
-        if user is None:
-            return None
-    
-        hashed_password = bytes(user.password[2:-1], "utf-8")
-        if not self.password(password, hashed_password):
-            return None 
-        return user
+        url = "http://127.0.0.1:8000/api/token/"
+        data = { "email": email, "password": password}
+        request = requests.post(url, json = data)
+        if request.status_code == 200:
+            return True
+        return False
                 
             
 

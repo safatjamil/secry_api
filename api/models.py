@@ -42,3 +42,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return self.email
+
+
+class Secret(models.Model):
+    user_id = models.IntegerField()
+    title = models.CharField(max_length=80)
+    secret = models.BinaryField(max_length=30)
+
+
+class EncKey(models.Model):
+    secret_id = models.IntegerField()
+    key = models.BinaryField()

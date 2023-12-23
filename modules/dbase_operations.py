@@ -3,10 +3,14 @@ from api.models import *
 
 class Create:
 
-    def user(self, data):
-        user = User.create(data)
-        user.save()
-        
+    def secret(self, data):
+        secret = Secret(user_id=data["user_id"], title=data["title"], secret=data["secret"])
+        secret.save()
+        return secret.id
+    
+    def enckey(self,data):
+        enckey = EncKey(secret_id=data["secret_id"], key=data["key"])
+        enckey.save()
 
 class Update:
 
