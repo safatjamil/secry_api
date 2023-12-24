@@ -1,14 +1,13 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from .models import *
 from modules.auth import *
-from modules.encrypt import *
+from modules.cryptography import *
 from modules.query import *
 from modules.validations import *
 from modules.jwt import *
@@ -53,6 +52,42 @@ def user_registration(request):
         })
 
 
+# This authentication method is to authenticate user by the email and password
+@api_view(["GET"])
+def user_authentication(request):
+    try:
+        data = request.data
+        if "email" in data and "password" in data:
+            verification = auth.user(email=data["email"].strip(), password=data["password"])
+        
+            if verification:
+                return Response({
+                        "status": status.HTTP_200_OK,
+                        "message": "Ok",
+                        "data": {},
+                    })
+            
+            else:
+                return Response({
+                "status": status.HTTP_401_UNAUTHORIZED,
+                "message": "Unauthorized",
+                "data" : {}
+                })
+
+        else:
+            return Response({
+            "status": status.HTTP_400_BAD_REQUEST,
+            "message": "Please provide valid data",
+            "data" : {}
+            })
+
+    except:
+        return Response({
+            "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "message": "Something went wrong",
+            "data" : {}
+        })
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated,])
 def user_view_account(request):
@@ -65,14 +100,14 @@ def user_view_account(request):
             "status": status.HTTP_200_OK,
             "message": "Account details",
             "data": data,
-            })
+           })
 
     except:
         return Response({
             "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
             "message": "Something went wrong",
             "data" : {}
-        })
+           })
 
 
 @api_view(["PUT"])

@@ -11,4 +11,10 @@ class Query:
     def duplicate_user(self,email):
         return User.objects.filter(email = email).count()
     
+    def secrets(self, user):
+        return Secret.objects.filter(user_id = user.id).all()
+    
+    def key(self, secret_id):
+        return EncKey.objects.filter(secret_id = secret_id)
+    
     

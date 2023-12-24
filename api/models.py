@@ -51,5 +51,5 @@ class Secret(models.Model):
 
 
 class EncKey(models.Model):
-    secret_id = models.IntegerField()
+    secret_id = models.IntegerField(unique=True)
     key = models.BinaryField()
