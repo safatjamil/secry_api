@@ -1,10 +1,7 @@
 import bcrypt
 import cryptography
 import requests
-from .query import *
 
-
-query = Query()
 
 class Auth:
 

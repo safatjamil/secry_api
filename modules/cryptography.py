@@ -10,13 +10,14 @@ class Encrypt:
     def string(self, content):
         key = Fernet.generate_key()
         fernet = Fernet(key)
-        encrypted = fernet.encrypt(str.encode("utf-8"))
+        encrypted = fernet.encrypt(content.encode())
         data = {"key": key, "enc_string": encrypted}
         return data
 
+
 class Decrypt:
 
-    def decrypt_string(self, encrypted, key):
+    def string(self, encrypted, key):
         fernet = Fernet(key)
         return fernet.decrypt(encrypted).decode()
  

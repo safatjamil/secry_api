@@ -6,19 +6,24 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from .models import *
-from modules.auth import *
-from modules.cryptography import *
-from modules.query import *
-from modules.validations import *
-from modules.jwt import *
-from modules.dbase_operations import *
+from modules import auth
+from modules import cryptography
+from modules import query
+from modules import validations 
+from modules import jwt
+from modules import dbase_operations
 
-auth = Auth()
-encrypt = Encrypt()
-validate = Validations()
-query = Query()
-create = Create()
-update = Update()
+
+# modules
+auth = auth.Auth()
+encrypt = cryptography.Encrypt()
+decrypt = cryptography.Decrypt()
+validate = validations.Validations()
+query = query.Query()
+create = dbase_operations.Create()
+update = dbase_operations.Update()
+delete = dbase_operations.Delete()
+
 
 User = get_user_model()
 
@@ -27,11 +32,15 @@ User = get_user_model()
 def user_registration(request):
     try:
         data = request.data
+        # clean data
+        data["email"] = data["email"].strip()
         data["first_name"] = data["first_name"].strip()
         data["last_name"] = data["last_name"].strip()
+
         serializer = UserSerializer(data = request.data)
         if serializer.is_valid():
-            user = User.objects.create_user(email=data["email"], password=data["password"], first_name=data["first_name"], last_name=data["last_name"])
+            create.user(data = data)
+            
             return Response({
                 "status": status.HTTP_201_CREATED,
                 "message": "Account has been created",
@@ -52,7 +61,7 @@ def user_registration(request):
         })
 
 
-# This authentication method is to authenticate user by the email and password
+# This method is to authenticate user by the email and password
 @api_view(["GET"])
 def user_authentication(request):
     try:
@@ -88,13 +97,12 @@ def user_authentication(request):
             "data" : {}
         })
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated,])
 def user_view_account(request):
     try:
         user = request.user
-        print(user.id)
-        print(user.email)
         data = {"email": user.email, "first_name": user.first_name, "last_name": user.last_name}
         return Response({
             "status": status.HTTP_200_OK,
@@ -118,8 +126,9 @@ def user_edit_email(request):
         user = request.user
         
         # requires password to change email
-        if "email" in data and "password" in data:
-            verification = auth.user(email=data["email"].strip(), password=data["password"])
+        if "password" in data:
+            # verify the user
+            verification = auth.user(email=user.email, password=data["password"])
         
             if verification:
                 if "new_email" in data and validate.email(data["new_email"]):
@@ -172,7 +181,6 @@ def user_edit_info(request):
     try:
         data  = request.data
         user = request.user
-        print(user.password)
         
         # assign a dummmy value to the last_name field if not sent
         if "last_name" not in data:
@@ -186,9 +194,9 @@ def user_edit_info(request):
             })
 
         else:
-            user.first_name = data["first_name"].strip()
-            user.last_name = data["last_name"].strip()
-            user.save()
+            # update user data
+            user_data = {"first_name": data["first_name"].strip(), "last_name": data["last_name"].strip()}
+            update.user(user = user, data = user_data)
             return Response({
                 "status": status.HTTP_201_CREATED,
                 "message": "Your account has been updated",
@@ -209,8 +217,8 @@ def user_change_password(request):
         data  = request.data
         user = request.user
         
-        if "email" in data and "old_password" in data:
-            verification = auth.user(email=data["email"].strip(), password=data["old_password"])
+        if "old_password" in data:
+            verification = auth.user(email=user.email, password=data["old_password"])
         
             if verification:
                 user.set_password(data["new_password"])
@@ -233,7 +241,7 @@ def user_change_password(request):
             "status": status.HTTP_400_BAD_REQUEST,
             "message": "Please provide valid data",
             "data" : {}
-            })
+           })
     except:
         return Response({
             "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -242,3 +250,49 @@ def user_change_password(request):
             })
 
 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated,])
+def delete_user(request):
+    try:
+        data = request.data
+        user = request.user
+        
+        # verify the password
+        if "password" in data:
+            # verify the user
+            verification = auth.user(email=user.email, password=data["password"])
+            if verification:
+                
+                secrets = query.secrets(user_id = user.id)
+                # delete all the secrets first
+                for secret in secrets:
+                    delete.secret(secret_id = secret.id)
+                    delete.enckey(secret_id = secret.id)
+                
+                # delete the user
+                delete.user(user = user)
+
+                return Response({
+                    "status": status.HTTP_200_OK,
+                    "message": "Your account has been destroyed. Sorry to see you go",
+                    "data": {},
+                    })
+            else:
+                return Response({
+                    "status": status.HTTP_401_UNAUTHORIZED,
+                    "message": "Unauthorized",
+                    "data" : {}
+                   })
+        else:
+            return Response({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "message": "Please provide valid data",
+                "data" : {}
+               })
+    
+    except:
+        return Response({
+            "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "message": "Something went wrong",
+            "data" : {}
+            })
