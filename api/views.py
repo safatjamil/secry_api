@@ -51,8 +51,7 @@ def user_registration(request):
 def user_authentication(request):
     try:
         data = request.data
-        if ("email" in data and 
-            "password" in data):
+        if "email" in data and "password" in data:
             verification = auth.user(email=data["email"].strip(), 
                                      password=data["password"])
             if verification:
