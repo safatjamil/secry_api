@@ -5,7 +5,8 @@ from cryptography.fernet import Fernet
 class Encrypt:
 
     def hash_password(self,password):
-        return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()) 
+        return bcrypt.hashpw(password.encode("utf-8"), 
+                             bcrypt.gensalt()) 
     
     def string(self, content):
         key = Fernet.generate_key()
